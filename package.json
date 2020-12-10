@@ -1,0 +1,33 @@
+{
+  "name": "assignment_2",
+  "version": "1.0.0",
+  "description": "Cloud-based collaborative whiteboard based on node.js for server/backend and fabric.js for client/frontend",
+  "main": "index.js",
+  "keywords": [
+    "socket.io",
+    "whiteboard"
+  ],
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mia17",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^4.5.3",
+    "express": "^4.17.1",
+    "fabric": "^4.2.0",
+    "jquery": "^3.5.1",
+    "moment": "^2.29.1",
+    "mongodb": "^3.6.3",
+    "node.js": "0.0.1-security",
+    "socket.io": "^3.0.3",
+    "socket.io-redis": "^6.0.1",
+    "ws": "^7.4.0"
+  },
+  "devDependencies": {
+    "@angular/cli": "^11.0.2",
+    "bufferutil": "^4.0.2",
+    "utf-8-validate": "^5.0.3"
+  }
+}

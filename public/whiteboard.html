@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="Cloud based collaborative whiteboard" content="#da532c">
+  <meta name="mia17" content="#ffffff">
+
+  <title>Collaborative Whiteboard</title>
+  
+  <!-- Import scripts -->
+  <script src="/node_modules/jquery/dist/jquery.js"></script>
+  <script src="/node_modules/bootstrap/dist/js/bootstrap.js"></script>
+  <script src="/node_modules/socket.io/client-dist/socket.io.js"></script>
+  <script src="/node_modules/fabric/dist/fabric.js"></script>
+  <script src="/node_modules/moment/moment.js"></script>
+  <script src="/public/theme/js/sb-admin-2.min.js"></script>
+
+  <!-- Import styles -->
+  <!-- <link href="public/styles.css" rel="stylesheet" type="text/css" > -->
+  <link href="/node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all">
+  
+  <link href="/public/theme/css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="/public/theme/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css" media="all">
+  <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+
+  <!-- Import favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/public/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/public/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/public/favicon/safari-pinned-tab.svg" color="#5bbad5">
+  
+  <style>
+    pre { margin-left: 15px !important }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+</head>
+<body>
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion toggled float-right" id="accordionSidebar">
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+
+      <!-- Heading -->
+      <div class="sidebar-heading">
+          Collaborative Whiteboard
+      </div>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider my-0">
+
+      <!-- Nav Item - Users Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="collapse" data-target="#collapseOne"
+            aria-expanded="true" aria-controls="collapseOne">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Users</span>
+        </a>
+        <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+              <h6 class="collapse-header" id="userCount"></h6>
+              <a class="collapse-item" id="users" ></a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Nav Item - Hisotry Collapse Menu -->
+      <li class="nav-item">
+          <a class="nav-link" href="#" data-toggle="collapse" data-target="#collapseTwo"
+              aria-expanded="true" aria-controls="collapseTwo">
+            <i class="fas fa-fw fa-history"></i>
+            <span>History</span>
+          </a>
+          <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Since you joined</h6>
+                <a class="collapse-item" id="history" ></a>
+            </div>
+          </div>
+      </li>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider d-none d-md-block">
+
+      <!-- Nav Item - Control Menu -->
+      <li class="nav-item" id="controlPanel">
+        <a class='nav-link' href='#' data-toggle='collapse' data-target='#collapseThree' aria-expanded='true' aria-controls='collapseThree'> 
+          <i class='fas fa-fw fa-tasks'></i> 
+          <span>Admin Controls</span> 
+        </a> 
+        <div id='collapseThree' class='collapse' aria-labelledby='headingThree' data-parent='#accordionSidebar'> 
+          <div class='bg-white py-2 collapse-inner rounded'> 
+            <a class='collapse-item' href='#' id='loadWhiteboards'> 
+              <i class='fa fa-save fa-sm fa-fw mr-2 text-primary'></i>
+              Open saved whiteboard
+            </a> 
+            <a class='collapse-item' href='javascript:void(0)' id='closeApp' > 
+              <i class='fas fa-sign-out-alt fa-sm fa-fw mr-2 text-danger'></i>
+              Close whiteboard
+            </a> 
+          </div> 
+        </div>
+      </li>
+
+    </ul>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column"> 
+    
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+          <!-- Sidebar Toggle (Topbar) -->
+          <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+              <i class="fa fa-bars"></i>
+          </button>
+
+          <!-- Topbar Navbar -->
+          <ul class="navbar-nav ml-auto">
+
+            <div class="topbar-divider d-none d-sm-block"></div>
+
+            <!-- Nav Item - User Information -->
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="username"></span>
+              </a>
+
+              <!-- Dropdown - User Information -->
+              <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown">
+
+                <a class="dropdown-item text-danger" href="#" data-toggle="modal" data-target="#logoutModal">
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-danger"></i>
+                    Leave
+                </a>
+              </div>
+            </li>
+
+          </ul>
+
+      </nav>
+      <!-- End of Topbar -->
+
+        <!-- Canvas Container -->
+        <div class="container-fluid">
+
+          <div id="bd-wrapper" ng-controller="CanvasControls">
+            <h2><span></span></h2>
+            <br>
+            <br>
+
+            <style>
+              #drawing-mode-options {
+                display: inline-block;
+                vertical-align: top;
+                margin-bottom: 10px;
+                margin-top: 10px;
+                background: #f5f2f0;
+                padding: 10px;
+              }
+              label {
+                display: inline-block; width: 130px;
+              }
+              .info {
+                display: inline-block;
+                width: 25px;
+                background: #ffc;
+              }
+              #bd-wrapper {
+                min-width: 1500px;
+              }
+            </style>
+
+            <canvas id="canvas" style="border:1px solid #aaa"></canvas>
+
+            <!-- Mode Controls -->
+            <div class="btn-group mt-2">
+              <a id="clear-canvas" class="btn btn-danger"><i class="fa fa-eraser mr-1"></i>Clear Whiteboard</a>
+            </div>
+
+            <!-- Brush Controls -->
+            <div class="row ml-1">
+              
+              <!-- Brush Selection -->
+              <div id="drawing-mode-options" class="mt-3">
+                <label for="drawing-mode-selector">Mode:</label>
+                <select id="drawing-mode-selector">
+                  <option>Pencil</option>
+                  <option>Circle</option>
+                  <option>Spray</option>
+                  <option>Pattern</option>
+                </select><br>
+
+                <label for="drawing-line-width">Line width:</label>
+                <span class="info">5</span><input type="range" value="5" min="0" max="150" id="drawing-line-width">
+
+                <label for="drawing-color">Line color:</label>
+                <input type="color" value="#000000" id="drawing-color">
+
+                <label for="drawing-shadow-color">Shadow color:</label>
+                <input type="color" value="#005E7A" id="drawing-shadow-color">
+
+                <label for="drawing-shadow-width">Shadow width:</label>
+                <span class="info">0</span><input type="range" value="0" min="0" max="50" id="drawing-shadow-width">
+
+                <label for="drawing-shadow-offset">Shadow offset:</label>
+                <span class="info">0</span><input type="range" value="0" min="0" max="50" id="drawing-shadow-offset">
+              </div>
+            </div>
+            <br />
+            <br />
+            
+            <!-- Whiteboard Script -->
+            <script id="main" src="./public/main.js"></script>
+
+          </div>
+
+          <script>
+            (function(){
+              var mainScriptEl = document.getElementById('main');
+              if (!mainScriptEl) return;
+              var preEl = document.createElement('pre');
+              var codeEl = document.createElement('code');
+              codeEl.innerHTML = mainScriptEl.innerHTML;
+              codeEl.className = 'language-javascript';
+              preEl.appendChild(codeEl);
+              document.getElementById('bd-wrapper').appendChild(preEl);
+            })();
+          </script>
+
+          <script>
+            (function() {
+              window.addEventListener('load', function() {
+                var canvas = this.__canvas || this.canvas,
+                    canvases = this.__canvases || this.canvases;
+
+                canvas && canvas.calcOffset && canvas.calcOffset();
+
+                if (canvases && canvases.length) {
+                  for (var i = 0, len = canvases.length; i < len; i++) {
+                    canvases[i].calcOffset();
+                  }
+                }
+              });
+            })();
+          </script>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal to collect username -->
+    <div id="loginModal" class="modal fade" tabindex="-1" role="dialog" data-keyboard="false" data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Enter username to join whiteboard</h5>
+          </div>
+          <div class="modal-body">
+            <div class="span5 offset2" id="login">
+              <form class="form-inline">
+                <input type="text" class="form-control" placeholder="Your name" id="name">
+              </form>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <input type="button" name="join" id="join" value="Join" class="btn btn-primary">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Previous Whitebord loading Modal -->
+    <div id="loadingModal" class="modal fade" tabindex="-1" role="dialog" data-keyboard="false" data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Open previous whiteboards</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+
+            <!-- List previous whiteboards -->
+            <div class="show" id="previousWhiteboards"> </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Whitebord closed Modal -->
+    <div id="closedModal" class="modal fade" tabindex="-1" role="dialog" data-keyboard="false" data-backdrop="static">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Whiteboard closed</h5>
+          </div>
+          <div class="modal-body">
+            <div class="span5 offset2">
+              <h5 class="modal-title" id="closedMessage">Thanks for joining the session, the admin has now closed the whiteboard. Bye!</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
