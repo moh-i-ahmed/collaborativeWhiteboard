@@ -7,9 +7,12 @@ WORKDIR /
 COPY package*.json ./
 
 RUN npm install
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install redis-server
+RUN redis-server &
 
 # Bundle app source
-COPY . .
+COPY ./ ./
 
 EXPOSE 8080
 

@@ -1,12 +1,10 @@
-const moment = require('moment');
 
 const cluster = require('cluster'),
       express = require('express'),
+      moment = require('moment'),
       fs = require('fs'),
       MongoClient = require('mongodb').MongoClient,
-      clusterTools = require('./server/clusterTools'),
       fabric = require('fabric').fabric,
-      // app = express(),
       port = process.env.PORT || 8080,
       numCPUs = require('os').cpus().length,
       printLines = '----------------------------------------------------';
@@ -23,8 +21,6 @@ const mongodbUri = "mongodb+srv://mkp14:hsXMDcZHujEombHL@cluster0.pvuqn.mongodb.
 var whiteboardContent = fs.readFileSync(whiteboardJsonFile, 'utf-8');
 
 // Store connected clients
-// let clients = new Map();
-// let users = {};
 let leader = null;
 
 // store worker threads
@@ -37,7 +33,7 @@ if (cluster.isMaster) {
   var redis = require('socket.io-redis');
 
   // Attach redis adapter to master socket instance
-  io.adapter(redis({ host: 'localhost', port: 6379 }));
+  io.adapter(redis({ host: '127.0.0.1', port: 6379 }));
 
   // Store clients details
   let allClients = new Map();
@@ -67,18 +63,14 @@ if (cluster.isMaster) {
           
           console.log(`\n${printLines}\nMaster Server: ${socketId} set as leader`);
 
+          // Get leader's whiteboard state
           retrieveWhiteboards(io, leader);
-
-          // // Get leader's whiteboard state
-          // console.log('Master sending old state ' + previousWhiteboards);
-          // io.to(leader).emit('leader', previousWhiteboards);
         } else {
           // Retrieve & send whiteboard state
           var whiteboardContent = fs.readFileSync(whiteboardJsonFile, 'utf-8');
 
           // Get leader's whiteboard state
           io.to(leader).emit('canvas:leader', socketId);
-          // io.to(socketId).emit('canvas:initial', whiteboardContent);
           console.log(`\n${printLines}\nMaster Server: Canvas state sent to ${socketId}`);
         }
         // Store socket & username
@@ -140,14 +132,29 @@ if (cluster.isMaster) {
         allClients.delete(msg.userDisconnected);
         delete allUsers[msg.userDisconnected];
 
+        var randomNumber = getRandomNumber(0, getUserCount(allUsers)) - 1;
+
+        // Select initial leader
+        if(allClients.size < 2) {
+          leader = Object.keys(allUsers)[0];
+          
+          console.log(`\n${printLines}\nMaster Server: ${leader} set as leader`);
+
+          // Get leader's whiteboard state & set new leader
+          retrieveWhiteboards(io, leader);
+        } else {
+          leader = Object.keys(allUsers)[randomNumber];
+          console.log(`\n${printLines}\nMaster Server: ${leader} set as leader`);
+
+          // Get leader's whiteboard state & set new leader
+          retrieveWhiteboards(io, leader);
+        }
         // Send status update to all clients 
         io.emit('update:history', emitMessage);
         io.emit('update:userCount', getUserCount(allUsers));
         io.emit('update:users', allUsers);
       } 
     });
-    // Get all connected users
-    // (io.sockets.sockets).size
   }
 
   // Worker process exits
@@ -166,7 +173,7 @@ if (cluster.isMaster) {
   var redis = require('socket.io-redis');
 
   // Attach Redis adapter to worker socket instance
-  io.adapter(redis({ host: 'localhost', port: 6379 }));
+  io.adapter(redis({ host: '127.0.0.1', port: 6379 }));
 
   // Listen for activity on port
   server.listen(port, ()=> console.log(`Worker Server ${process.pid}: listening on port ${port}...`));
@@ -201,13 +208,6 @@ if (cluster.isMaster) {
       // Update all clients on join
       socket.emit('update:history', `${username} connected to server.`);
     });
-
-    /**
-     * TODO:
-     * 
-     * add object removal
-     * client leader selection using voting
-     */
 
     // Object added by client
     socket.on('object:added', (data)=> socket.broadcast.emit('object:added', data));
@@ -265,18 +265,16 @@ if (cluster.isMaster) {
 
 } // End of else
 
-// Print connections to server every 10 seconds
-// setInterval(()=> {
-//   if(clients.size == 0) {
-//     console.log(`\n${printLines}\nServer: No clients connected...`);
-//   } else {
-//     console.log(`\n${printLines}\nServer: ${clients.size} connected client(s)`);
-//     io.emit('message', "You're in");
-//   }
-// }, 10000);
 
 // Function returning the count of keys in an object
-function getUserCount(object){ return Object.keys(object).length }
+function getUserCount(object){ return Object.keys(object).length; }
+
+// Function returning a random number between min and max
+function getRandomNumber(min, max) { 
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 // Function to save whiteboard state to database 
 async function createWhiteboardSave(whiteboardState){

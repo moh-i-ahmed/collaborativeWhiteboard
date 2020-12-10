@@ -4,8 +4,6 @@ moment.locale('en');
   // Connect to server socket
   var socket = io.connect("http://localhost:8080", { transports: [ 'websocket' ], reconnect: true });
 
-  console.log(socket);
-
   // Check connection status
   setTimeout(()=>{ console.log("Connected:" + socket.connected) }, 1000);
 
@@ -47,7 +45,6 @@ moment.locale('en');
   clearEl.onclick = function() { 
     // Store canvas as JSON
     var canvasState = JSON.stringify(canvas);
-    console.log(canvasState);
 
     canvas.clear();
     socket.emit('canvas:clear', {});
@@ -167,8 +164,6 @@ moment.locale('en');
     // Parse incoming JSON
     var fabricObject = JSON.parse(rawObject);
 
-    console.log('Added received:' + fabricObject);
-
     // Deserialize JSON & add object to canvas
     fabric.util.enlivenObjects([fabricObject], function(enlivenedObjects) {
       // Prevent an infinite loop of adding the same object
@@ -177,101 +172,6 @@ moment.locale('en');
       canvas.renderAll();
     });
   });
-
-  window.onkeyup = function(e) {
-    var key = e.keyCode ? e.keyCode : e.which;
-    var fabricObject = canvas.getActiveObject();
-      
-    // No object found
-    if(!fabricObject) return null 
-    
-    // Delete key is pressed
-    if(key == 46) {
-      console.log('Delete pressed');
-      canvas.remove(fabricObject);
-    }
-    e.preventDefault();
-    return false;
-  }
-
-  // Client removed object from canvas 
-  canvas.on('object:removed', (removedObject)=> {
-    var fabricObject = removedObject.target;
-
-    console.log('Removed object ' + removedObject);
-    console.log("Removed ID " + removedObject["uuid"]);
-
-    // Serialize object to JSON & transmit
-    socket.emit('object:removed', JSON.stringify(fabricObject));
-
-    // Remove object from client's canvas
-    // canvas.remove(fabricObject);
-  });
-
-  // Object removed from canvas by other client
-  socket.on('object:removed', (rawObject)=> {
-    // Parse incoming JSON
-    var removedObject = JSON.parse(rawObject);
-    console.log('Raw object recieved ' + removedObject["uuid"]);
-    var fabricObject = getObjectById(removedObject["uuid"]);
-
-    console.log('Removal received ' + fabricObject["uuid"]);
-    if(fabricObject) {
-      canvas.remove(fabricObject);
-    } else {
-      console.warn('Object not found on canvas');
-    }
-  });
-
-  // objectModified = function(modifiedObject) {
-  //   var fabricObject = modifiedObject.target;
-  //   // canvas.add(fabricObject);
-  //   console.log('sadfasdf ' + fabricObject);
-  //   socket.emit('object:modified', JSON.stringify(fabricObject));
-  // }
-
-  // // Client edits/modifies object on canvas
-  // canvas.on('object:modified', objectModified);
-
-  // // Object modified by other client
-  // socket.on('object:modified', function(rawObject) {
-  //   // Parse incoming JSON
-  //   var modifiedObject = JSON.parse(rawObject);
-  //   console.log(modifiedObject);
-  //   console.log('Modified object received');
-
-  //   canvas.getObjects().forEach(function(o) {
-  //     // Replace object with modified version
-  //     if(o.id === modifiedObject.id) {
-        
-  //       // Deserialize JSON & add object to canvas
-  //       fabric.util.enlivenObjects([modifiedObject], function(enlivenedObjects) {
-  //         // Prevent an infinite loop of adding the same object
-  //         enlivenedObjects[0].remote = true;
-  //         o.set(enlivenedObjects[0]);
-  //         canvas.renderAll();
-  //       });
-
-  //       // console.log('Object modified' + o.id + '--- ' + modifiedObject.id);
-  //       // // canvas.setActiveObject(o)
-  //       // o.set(modifiedObject);
-  //       // console.log(o);
-  //       // canvas.renderAll();
-  //     }
-  //   })
-
-  //   // var fabricObject = canvas.getObjects().forEach(function(o) {
-  //   //   // Replace object with modified version
-  //   //   if(o.id === modifiedObject.id) {
-        
-  //   //     console.log('Object modified' + o.id + '--- ' + modifiedObject.id);
-  //   //     // canvas.setActiveObject(o)
-  //   //     o.set(modifiedObject);
-  //   //     console.log(o);
-  //   //     canvas.renderAll();
-  //   //   }
-  //   // })
-  // });
 
 
   /* 
@@ -307,7 +207,6 @@ moment.locale('en');
           $('#loginModal').modal('hide');
           $("#username").append(name);
 
-          // $('#controlPanel').append("<a class='nav-link' href='#' data-toggle='collapse' data-target='#collapseThree' aria-expanded='true' aria-controls='collapseThree'> <i class='fas fa-fw fa-tasks'></i> <span>Admin Controls</span> </a> <div id='collapseThree' class='collapse' aria-labelledby='headingThree' data-parent='#accordionSidebar'> <div class='bg-white py-2 collapse-inner rounded'> <a class='collapse-item' href='#' id='loadWhiteboard'> <i class='fa fa-save fa-sm fa-fw mr-2 text-primary'></i>Open saved whiteboard</a> <a class='collapse-item' href='javascript:void(0)' id='closeApp' > <i class='fas fa-sign-out-alt fa-sm fa-fw mr-2 text-danger'></i>Close whiteboard</a> </div> </div>");
           ready = true;
       }
     });
@@ -330,11 +229,7 @@ moment.locale('en');
 
     // Leader closing application
     $("#loadWhiteboards").on("click", function() { 
-      // Show leader a status message
-      // $("#closedMessage").empty();
-      // $("#closedMessage").append("Whiteboard successfully closed... ");
       $('#loadingModal').modal('show');
-      console.log('Loadinaddd');
     });
 
     // Leader closing application
@@ -398,6 +293,7 @@ moment.locale('en');
       $.each(previousWhiteboards, function(index) {
         // Generate dynamic whiteboard loading content
         var previousWhiteboardId = `loadWhiteboard${index}`;
+
         var loadingButton = $(`<div class='bg-white py-2 rounded'> <a class='collapse-item show' href='#' id='${previousWhiteboardId}'> <i class='fa fa-save fa-sm fa-fw mr-2 text-primary'></i> </a> </div>`);
 
         // Add dynamic content to view
@@ -422,9 +318,6 @@ moment.locale('en');
 
   // Load initial canvas state on join
   socket.on('canvas:initial', (data)=> {
-    console.log('Initial state received');
-    console.log(data);
-
     // Temporarily disable event listener to prevent looping
     var initialListeners = canvas.__eventListeners['object:added'];
     canvas.__eventListeners['object:added'] = [];
